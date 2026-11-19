@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_smart_approval_request_list" model="ir.ui.view">
+        <field name="name">smart.approval.request.list</field>
+        <field name="model">smart.approval.request</field>
+        <field name="arch" type="xml"><list>
+            <field name="name"/><field name="title"/><field name="type_id"/>
+            <field name="requester_id"/><field name="amount"/><field name="currency_id" column_invisible="True"/>
+            <field name="current_approver_id"/><field name="state" widget="badge"/>
+        </list></field>
+    </record>
+    <record id="view_smart_approval_request_form" model="ir.ui.view">
+        <field name="name">smart.approval.request.form</field>
+        <field name="model">smart.approval.request</field>
+        <field name="arch" type="xml"><form string="Approval Request">
+            <header>
+                <button name="action_submit" string="Submit" type="object" class="btn-primary" invisible="state != 'draft'"/>
+                <button name="action_approve" string="Approve" type="object" class="btn-primary" invisible="not can_approve"/>
+                <button name="action_reject" string="Reject" type="object" invisible="not can_approve"/>
+                <button name="action_cancel" string="Cancel" type="object" invisible="state not in ('draft', 'pending')"/>
+                <field name="state" widget="statusbar" statusbar_visible="draft,pending,approved,rejected,cancelled"/>
+            </header>
+            <sheet>
+                <div class="oe_title"><h1><field name="title" placeholder="What needs approval?" readonly="state != 'draft'"/></h1></div>
+                <group><group><field name="name"/><field name="type_id" readonly="state != 'draft'"/>
+                    <field name="requester_id"/><field name="company_id"/></group>
+                    <group><field name="amount" readonly="state != 'draft'"/><field name="currency_id"/>
+                    <field name="current_approver_id"/><field name="date_requested"/><field name="date_closed"/></group></group>
+                <group><field name="description" readonly="state != 'draft'"/></group>
+                <notebook><page string="Approval History"><field name="approval_line_ids">
+                    <list create="0" edit="0" delete="0"><field name="sequence"/><field name="name"/>
+                        <field name="user_id"/><field name="state" widget="badge"/><field name="decision_date"/></list>
+                </field></page></notebook>
+            </sheet>
+            <chatter/>
+        </form></field>
+    </record>
+    <record id="view_smart_approval_request_search" model="ir.ui.view">
+        <field name="name">smart.approval.request.search</field>
+        <field name="model">smart.approval.request</field>
+        <field name="arch" type="xml"><search>
+            <field name="name"/><field name="title"/><field name="type_id"/>
+            <filter name="my_requests" string="My Requests" domain="[('requester_id', '=', uid)]"/>
+            <filter name="my_approvals" string="To Approve" domain="[('current_approver_id', '=', uid), ('state', '=', 'pending')]"/>
+            <filter name="pending" string="Pending" domain="[('state', '=', 'pending')]"/>
+            <group><filter name="group_state" string="Status" context="{'group_by':'state'}"/>
+                <filter name="group_type" string="Type" context="{'group_by':'type_id'}"/></group>
+        </search></field>
+    </record>
+    <record id="action_smart_approval_requests" model="ir.actions.act_window">
+        <field name="name">Approval Requests</field><field name="res_model">smart.approval.request</field>
+        <field name="view_mode">list,form</field><field name="search_view_id" ref="view_smart_approval_request_search"/>
+    </record>
+    <record id="action_smart_approval_my_queue" model="ir.actions.act_window">
+        <field name="name">My Approval Queue</field><field name="res_model">smart.approval.request</field>
+        <field name="view_mode">list,form</field><field name="domain">[('current_approver_id', '=', uid), ('state', '=', 'pending')]</field>
+    </record>
+</odoo>
