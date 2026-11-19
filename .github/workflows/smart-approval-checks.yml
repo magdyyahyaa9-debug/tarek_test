@@ -1,0 +1,44 @@
+name: Smart Approval Center static checks
+
+on:
+  push:
+    branches:
+      - feature/smart-approval-center
+  pull_request:
+    paths:
+      - 'smart_approval_center/**'
+      - '.github/workflows/smart-approval-checks.yml'
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check Python syntax
+        run: python -m compileall -q smart_approval_center
+      - name: Validate addon XML and CSV declarations
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+          import csv
+          import ast
+          root = Path('smart_approval_center')
+          manifest = ast.literal_eval((root / '__manifest__.py').read_text())
+          assert manifest['version'].startswith('19.0.')
+          for file in root.rglob('*.xml'):
+              ET.parse(file)
+              print('XML OK:', file)
+          for file in root.rglob('*.csv'):
+              with file.open(newline='') as handle:
+                  rows = list(csv.reader(handle))
+              assert rows and len(rows[0]) == 8
+              assert all(len(row) == len(rows[0]) for row in rows)
+              print('CSV OK:', file)
+          for filename in manifest['data']:
+              assert (root / filename).is_file(), filename
+          print('Manifest paths OK')
+          PY
