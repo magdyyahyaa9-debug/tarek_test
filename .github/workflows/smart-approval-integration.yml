@@ -1,0 +1,72 @@
+name: Odoo 19 isolated installation and workflow tests
+
+on:
+  push:
+    branches:
+      - feature/smart-approval-center
+    paths:
+      - 'smart_approval_center/**'
+      - '.github/workflows/smart-approval-integration.yml'
+  pull_request:
+    paths:
+      - 'smart_approval_center/**'
+      - '.github/workflows/smart-approval-integration.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-odoo19:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: odoo
+          POSTGRES_PASSWORD: odoo
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U odoo -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - name: Checkout only this repository
+        uses: actions/checkout@v4
+      - name: Pull official Odoo 19 image
+        run: docker pull odoo:19.0
+      - name: Initialize ephemeral database and run addon tests
+        shell: bash
+        run: |
+          set -o pipefail
+          docker run --rm --network host \
+            -v "$GITHUB_WORKSPACE:/mnt/extra-addons:ro" \
+            -e HOST=127.0.0.1 \
+            -e PORT=5432 \
+            -e USER=odoo \
+            -e PASSWORD=odoo \
+            odoo:19.0 \
+            odoo -d smart_approval_ci \
+            --db_host=127.0.0.1 --db_port=5432 \
+            --db_user=odoo --db_password=odoo \
+            --addons-path=/usr/lib/python3/dist-packages/odoo/addons,/mnt/extra-addons \
+            --init=base,smart_approval_center \
+            --without-demo=all --stop-after-init \
+            --test-enable --test-tags=/smart_approval_center \
+            --log-level=test 2>&1 | tee odoo-install-test.log
+          if grep -E '(^|[[:space:]])(ERROR|CRITICAL)[[:space:]]' odoo-install-test.log; then
+            echo "Odoo logged errors; failing isolated test"
+            exit 1
+          fi
+      - name: Upload isolated Odoo test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: isolated-odoo19-log
+          path: odoo-install-test.log
+          if-no-files-found: ignore
+          retention-days: 7
