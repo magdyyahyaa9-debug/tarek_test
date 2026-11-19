@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_smart_approval_root" name="Smart Approvals" sequence="45" groups="smart_approval_center.group_smart_approval_user"/>
+    <menuitem id="menu_smart_approval_requests" name="Requests" parent="menu_smart_approval_root"
+              action="action_smart_approval_requests" sequence="10"/>
+    <menuitem id="menu_smart_approval_queue" name="My Approval Queue" parent="menu_smart_approval_root"
+              action="action_smart_approval_my_queue" sequence="20"/>
+    <menuitem id="menu_smart_approval_configuration" name="Configuration" parent="menu_smart_approval_root"
+              sequence="90" groups="smart_approval_center.group_smart_approval_manager"/>
+    <menuitem id="menu_smart_approval_types" name="Approval Types" parent="menu_smart_approval_configuration"
+              action="action_smart_approval_types"/>
+</odoo>
