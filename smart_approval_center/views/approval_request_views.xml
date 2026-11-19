@@ -43,7 +43,7 @@
             <filter name="my_requests" string="My Requests" domain="[('requester_id', '=', uid)]"/>
             <filter name="my_approvals" string="To Approve" domain="[('current_approver_id', '=', uid), ('state', '=', 'pending')]"/>
             <filter name="pending" string="Pending" domain="[('state', '=', 'pending')]"/>
-            <group expand="0" string="Group By"><filter name="group_state" string="Status" context="{'group_by':'state'}"/>
+            <group><filter name="group_state" string="Status" context="{'group_by':'state'}"/>
                 <filter name="group_type" string="Type" context="{'group_by':'type_id'}"/></group>
         </search></field>
     </record>
